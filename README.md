@@ -1,57 +1,107 @@
-## SIIM-ISIC-Melanoma-Classification-1st-Place-Solution
+# MMC image classification base-kernel
 
-Competition Leaderboard: https://www.kaggle.com/c/siim-isic-melanoma-classification/leaderboard 
+MMC 연구실의 image classification 연구실험을 위한 base-kernel.
 
-### SOFTWARE (python packages are detailed separately in `requirements.txt`)
 
-Python 3.6.9
+
+## SOFTWARE 
+
+
+Python 3.6.9 ~ 3.7.9
 
 CUDA Version 10.2.89
 
 cuddn 7.6.5
 
-nvidia Driver Version: 418.116.00
+(`requirements.txt`안의 python package 상세 참조)
+
+1. Nvidia 드라이버, CUDA toolkit 10.2, Anaconda 설치
+
+2. pytorch 설치
+
+        conda install pytorch torchvision cudatoolkit=10.2 -c pytorch
+
+3. 각종 필요 패키지 설치
+
+        pip install opencv-contrib-python kaggle resnest geffnet albumentations pillow scikit-learn scikit-image pandas tqdm pretrainedmodels
+
+4. apex 설치
+
+        conda install -c conda-forge nvidia-apex
+        
+5. git, LR 관련 패키지 설치
+
+        conda install git
+        pip install git+https://github.com/ildoonet/pytorch-gradual-warmup-lr.git
 
 
-### DATA SETUP (assumes the [Kaggle API](https://github.com/Kaggle/kaggle-api) is installed)
-Download and unzip resized 2020 and 2019 data (including 2018) of 3 sizes by Chris Deotte.
+## DATA SETUP 
 
+`./data` 하위 경로를 기준으로 `DB명/{test,train,test.csv,train.csv}`
 
-kaggle datasets download -d cdeotte/jpeg-isic2019-512x512
-kaggle datasets download -d cdeotte/jpeg-melanoma-512x512
-kaggle datasets download -d cdeotte/jpeg-isic2019-768x768
-kaggle datasets download -d cdeotte/jpeg-melanoma-768x768
-kaggle datasets download -d cdeotte/jpeg-isic2019-1024x1024
-kaggle datasets download -d cdeotte/jpeg-melanoma-1024x1024
+아래는 Database의 샘플 구조이며, 접미사 ext는 외부데이터 (크롤링 혹은 생성한)를 뜻한다. 
+
 
 ```
-mkdir ./data
-cd ./data
-for input_size in 512 768 1024
-do
-  kaggle datasets download -d cdeotte/jpeg-isic2019-${input_size}x${input_size}
-  kaggle datasets download -d cdeotte/jpeg-melanoma-${input_size}x${input_size}
-  unzip -q jpeg-melanoma-${input_size}x${input_size}.zip -d jpeg-melanoma-${input_size}x${input_size}
-  unzip -q jpeg-isic2019-${input_size}x${input_size}.zip -d jpeg-isic2019-${input_size}x${input_size}
-  rm jpeg-melanoma-${input_size}x${input_size}.zip jpeg-isic2019-${input_size}x${input_size}.zip
-done
+./data/database01/test/{im1.jpg, im2.jpg, ... ,imn.jpg}
+./data/database01/train/{im1.jpg, im2.jpg, ... ,imn.jpg}
+./data/database01/test.csv
+./data/database01/train.csv
+
+./data/database_ext01/train/{im1.jpg, im2.jpg, ... ,imn.jpg}
+./data/database_ext01/train.csv
+
+./data/database_ext02/train/{im1.jpg, im2.jpg, ... ,imn.jpg}
+./data/database_ext02/train.csv
 ```
 
-### Model Illustration
-
-![](https://github.com/haqishen/SIIM-ISIC-Melanoma-Classification-1st-Place-Solution/blob/master/figure1.png)
-
-More details can be found here: https://www.kaggle.com/c/siim-isic-melanoma-classification/discussion/175412
- 
-
-### Training
-
-Training commands of the 18 models. Training time for a single model ranges from 15 to 45 hours for all 5 folds in our setup.
-
-After training, models will be saved in `./weights/` Tranning logs will be saved in `./logs/`
+아래는 샘플 csv 구조
 
 ```
-python train.py --kernel-type 9c_meta_b3_768_512_ext_18ep --data-dir ./data/ --data-folder 768 --image-size 512 --enet-type efficientnet_b3 --use-meta --n-epochs 18 --use-amp --CUDA_VISIBLE_DEVICES 0,1
+,image_name,target,patient_id,image_number
+3332,51-1.jpg,1,51,1.jpg
+3333,51-2.jpg,1,51,2.jpg
+3334,51-3.jpg,1,51,3.jpg
+3335,51-4.jpg,1,51,4.jpg
+3344,52-1.jpg,1,52,1.jpg
+3345,52-2.jpg,1,52,2.jpg
+3346,52-3.jpg,1,52,3.jpg
+3347,52-4.jpg,1,52,4.jpg
+...
+
+```
+
+
+
+## Training
+
+
+
+
+Terminal을 이용하는 경우 경로 설정 후 아래 코드를 직접 실행
+
+        python train.py --kernel-type 5fold_b3_30ep --data-folder original_stone/ --enet-type tf_efficientnet_b3_ns --n-epochs 30
+
+pycharm의 경우: 
+
+        Run 메뉴
+        -> Edit Configuration 
+        -> train.py 가 선택되었는지 확인 
+        -> parameters 이동 후 아래를 입력 
+
+        --kernel-type 5fold_b3_256_30ep --data-folder original_stone/ --enet-type tf_efficientnet_b7_ns --n-epochs 30
+
+        -> 적용하기 후 실행/디버깅
+
+
+아래는 18개 모델에 대한 샘플예제 command이다. 
+
+학습이 진행되면서 폴더 `./weights/` 에, best, final weight가 저장된다. 학습 로그는 `./logs/` 폴더에 저장된다. 
+
+아래는 타 대회의 우승팀이 조합한 18개 모델에 대한 학습 스크립트이다. (https://www.kaggle.com/boliu0/melanoma-winning-models)
+
+```
+python train.py --kernel-type 9c_meta_b3_768_512_ext_18ep --data-dir ./data/ --data-folder 768 --image-size 512 --enet-type efficientnet_b3  --n-epochs 18 --use-amp --CUDA_VISIBLE_DEVICES 0,1
 
 python train.py --kernel-type 9c_b4ns_2e_896_ext_15ep --data-dir ./data/ --data-folder 1024 --image-size 896 --enet-type tf_efficientnet_b4_ns --use-amp --init-lr 2e-5 --CUDA_VISIBLE_DEVICES 0,1,2,3,4,5
 
@@ -61,7 +111,7 @@ python train.py --kernel-type 9c_b4ns_768_640_ext_15ep --data-dir ./data/ --data
 
 python train.py --kernel-type 9c_b4ns_768_768_ext_15ep --data-dir ./data/ --data-folder 768 --image-size 768 --enet-type tf_efficientnet_b4_ns --use-amp --CUDA_VISIBLE_DEVICES 0,1,2
 
-python train.py --kernel-type 9c_meta_b4ns_640_ext_15ep --data-dir ./data/ --data-folder 768 --image-size 640 --enet-type tf_efficientnet_b4_ns --use-meta --use-amp --CUDA_VISIBLE_DEVICES 0,1,2,3
+python train.py --kernel-type 9c_meta_b4ns_640_ext_15ep --data-dir ./data/ --data-folder 768 --image-size 640 --enet-type tf_efficientnet_b4_ns  --use-amp --CUDA_VISIBLE_DEVICES 0,1,2,3
 
 python train.py --kernel-type 4c_b5ns_1.5e_640_ext_15ep --data-dir ./data/ --data-folder 768 --image-size 640 --enet-type tf_efficientnet_b5_ns --out-dim 4 --init-lr 1.5e-5 --use-amp --CUDA_VISIBLE_DEVICES 0,1,2
 
@@ -69,7 +119,7 @@ python train.py --kernel-type 9c_b5ns_1.5e_640_ext_15ep --data-dir ./data/ --dat
 
 python train.py --kernel-type 9c_b5ns_448_ext_15ep-newfold --data-dir ./data/ --data-folder 512 --image-size 448 --enet-type tf_efficientnet_b5_ns --use-amp --CUDA_VISIBLE_DEVICES 0,1
 
-python train.py --kernel-type 9c_meta128_32_b5ns_384_ext_15ep --data-dir ./data/ --data-folder 512 --image-size 384 --enet-type tf_efficientnet_b5_ns --use-meta --n-meta-dim 128,32 --use-amp --CUDA_VISIBLE_DEVICES 0
+python train.py --kernel-type 9c_meta128_32_b5ns_384_ext_15ep --data-dir ./data/ --data-folder 512 --image-size 384 --enet-type tf_efficientnet_b5_ns  --n-meta-dim 128,32 --use-amp --CUDA_VISIBLE_DEVICES 0
 
 python train.py --kernel-type 9c_b6ns_448_ext_15ep-newfold --data-dir ./data/ --data-folder 512 --image-size 448 --enet-type tf_efficientnet_b6_ns --use-amp --CUDA_VISIBLE_DEVICES 0,1
 
@@ -81,7 +131,7 @@ python train.py --kernel-type 9c_b7ns_1e_576_ext_15ep_oldfold --data-dir ./data/
 
 python train.py --kernel-type 9c_b7ns_1e_640_ext_15ep --data-dir ./data/ --data-folder 768 --image-size 640 --enet-type tf_efficientnet_b7_ns --init-lr 1e-5 --use-amp --CUDA_VISIBLE_DEVICES 0,1,2,3,4,5,6,7
 
-python train.py --kernel-type 9c_meta_1.5e-5_b7ns_384_ext_15ep --data-dir ./data/ --data-folder 512 --image-size 384 --enet-type tf_efficientnet_b7_ns --use-meta --use-amp --CUDA_VISIBLE_DEVICES 0,1,2
+python train.py --kernel-type 9c_meta_1.5e-5_b7ns_384_ext_15ep --data-dir ./data/ --data-folder 512 --image-size 384 --enet-type tf_efficientnet_b7_ns  --use-amp --CUDA_VISIBLE_DEVICES 0,1,2
 
 python train.py --kernel-type 9c_nest101_2e_640_ext_15ep --data-dir ./data/ --data-folder 768 --image-size 640 --enet-type resnest101 --init-lr 2e-5 --use-amp --CUDA_VISIBLE_DEVICES 0,1,2,3
 
@@ -90,13 +140,12 @@ python train.py --kernel-type 9c_se_x101_640_ext_15ep --data-dir ./data/ --data-
 
 ### (Optional) Evaluating
 
-Optionally, you can evaluate each model on 5 fold cross valiation sets. You can either use the models trained in previous step, or use the trained models we provided and specify the directory in `--model-dir`.
+학습한 모델을 k-fold cross validation 진행한다. 앞에서 학습에 사용한 모델을 사용하거나, `--model-dir`안에 있는 모델을 명시하여 평가할 수 있다. 
 
-Evaluation results will be printed out and saved to `./logs/` Out-of-folds prediction results will be saved to `./oofs/`
-
+평가 결과는 `./logs/`에 저장되며, 전체 합쳐진 결과 (Out-of-folds)는  `./oofs/` 폴더에 저장된다. 
 
 ```
-python evaluate.py --kernel-type 9c_meta_b3_768_512_ext_18ep --data-dir ./data/ --data-folder 768 --image-size 512 --enet-type efficientnet_b3 --use-meta
+python evaluate.py --kernel-type 9c_meta_b3_768_512_ext_18ep --data-dir ./data/ --data-folder 768 --image-size 512 --enet-type efficientnet_b3 
 
 python evaluate.py --kernel-type 9c_b4ns_2e_896_ext_15ep --data-dir ./data/ --data-folder 1024 --image-size 896 --enet-type tf_efficientnet_b4_ns
 
@@ -106,7 +155,7 @@ python evaluate.py --kernel-type 9c_b4ns_768_640_ext_15ep --data-dir ./data/ --d
 
 python evaluate.py --kernel-type 9c_b4ns_768_768_ext_15ep --data-dir ./data/ --data-folder 768 --image-size 768 --enet-type tf_efficientnet_b4_ns
 
-python evaluate.py --kernel-type 9c_meta_b4ns_640_ext_15ep --data-dir ./data/ --data-folder 768 --image-size 640 --enet-type tf_efficientnet_b4_ns --use-meta
+python evaluate.py --kernel-type 9c_meta_b4ns_640_ext_15ep --data-dir ./data/ --data-folder 768 --image-size 640 --enet-type tf_efficientnet_b4_ns 
 
 python evaluate.py --kernel-type 4c_b5ns_1.5e_640_ext_15ep --data-dir ./data/ --data-folder 768 --image-size 640 --enet-type tf_efficientnet_b5_ns --out-dim 4
 
@@ -114,7 +163,7 @@ python evaluate.py --kernel-type 9c_b5ns_1.5e_640_ext_15ep --data-dir ./data/ --
 
 python evaluate.py --kernel-type 9c_b5ns_448_ext_15ep-newfold --data-dir ./data/ --data-folder 512 --image-size 448 --enet-type tf_efficientnet_b5_ns
 
-python evaluate.py --kernel-type 9c_meta128_32_b5ns_384_ext_15ep --data-dir ./data/ --data-folder 512 --image-size 384 --enet-type tf_efficientnet_b5_ns --use-meta --n-meta-dim 128,32
+python evaluate.py --kernel-type 9c_meta128_32_b5ns_384_ext_15ep --data-dir ./data/ --data-folder 512 --image-size 384 --enet-type tf_efficientnet_b5_ns  --n-meta-dim 128,32
 
 python evaluate.py --kernel-type 9c_b6ns_448_ext_15ep-newfold --data-dir ./data/ --data-folder 512 --image-size 448 --enet-type tf_efficientnet_b6_ns
 
@@ -126,7 +175,7 @@ python evaluate.py --kernel-type 9c_b7ns_1e_576_ext_15ep_oldfold --data-dir ./da
 
 python evaluate.py --kernel-type 9c_b7ns_1e_640_ext_15ep --data-dir ./data/ --data-folder 768 --image-size 640 --enet-type tf_efficientnet_b7_ns
 
-python evaluate.py --kernel-type 9c_meta_1.5e-5_b7ns_384_ext_15ep --data-dir ./data/ --data-folder 512 --image-size 384 --enet-type tf_efficientnet_b7_ns --use-meta
+python evaluate.py --kernel-type 9c_meta_1.5e-5_b7ns_384_ext_15ep --data-dir ./data/ --data-folder 512 --image-size 384 --enet-type tf_efficientnet_b7_ns 
 
 python evaluate.py --kernel-type 9c_nest101_2e_640_ext_15ep --data-dir ./data/ --data-folder 768 --image-size 640 --enet-type resnest101
 
@@ -135,12 +184,12 @@ python evaluate.py --kernel-type 9c_se_x101_640_ext_15ep --data-dir ./data/ --da
 
 ### Predicting
 
-Make predictions on test set. You can either use the models trained in the Training step, or use the trained models we provided and specify the directory in `--model-dir`
+Test 데이터에 따른 예측을 실시한다. 
 
-Each models submission file will be saved to `./subs/`
+각 모델의 평가 결과는 아래 `./subs/` 폴더에 저장된다. 
 
 ```
-python predict.py --kernel-type 9c_meta_b3_768_512_ext_18ep --data-dir ./data/ --data-folder 768 --image-size 512 --enet-type efficientnet_b3 --use-meta
+python predict.py --kernel-type 9c_meta_b3_768_512_ext_18ep --data-dir ./data/ --data-folder 768 --image-size 512 --enet-type efficientnet_b3 
 
 python predict.py --kernel-type 9c_b4ns_2e_896_ext_15ep --data-dir ./data/ --data-folder 1024 --image-size 896 --enet-type tf_efficientnet_b4_ns
 
@@ -150,7 +199,7 @@ python predict.py --kernel-type 9c_b4ns_768_640_ext_15ep --data-dir ./data/ --da
 
 python predict.py --kernel-type 9c_b4ns_768_768_ext_15ep --data-dir ./data/ --data-folder 768 --image-size 768 --enet-type tf_efficientnet_b4_ns
 
-python predict.py --kernel-type 9c_meta_b4ns_640_ext_15ep --data-dir ./data/ --data-folder 768 --image-size 640 --enet-type tf_efficientnet_b4_ns --use-meta
+python predict.py --kernel-type 9c_meta_b4ns_640_ext_15ep --data-dir ./data/ --data-folder 768 --image-size 640 --enet-type tf_efficientnet_b4_ns 
 
 python predict.py --kernel-type 4c_b5ns_1.5e_640_ext_15ep --data-dir ./data/ --data-folder 768 --image-size 640 --enet-type tf_efficientnet_b5_ns --out-dim 4
 
@@ -158,7 +207,7 @@ python predict.py --kernel-type 9c_b5ns_1.5e_640_ext_15ep --data-dir ./data/ --d
 
 python predict.py --kernel-type 9c_b5ns_448_ext_15ep-newfold --data-dir ./data/ --data-folder 512 --image-size 448 --enet-type tf_efficientnet_b5_ns
 
-python predict.py --kernel-type 9c_meta128_32_b5ns_384_ext_15ep --data-dir ./data/ --data-folder 512 --image-size 384 --enet-type tf_efficientnet_b5_ns --use-meta --n-meta-dim 128,32
+python predict.py --kernel-type 9c_meta128_32_b5ns_384_ext_15ep --data-dir ./data/ --data-folder 512 --image-size 384 --enet-type tf_efficientnet_b5_ns  --n-meta-dim 128,32
 
 python predict.py --kernel-type 9c_b6ns_448_ext_15ep-newfold --data-dir ./data/ --data-folder 512 --image-size 448 --enet-type tf_efficientnet_b6_ns
 
@@ -170,28 +219,20 @@ python predict.py --kernel-type 9c_b7ns_1e_576_ext_15ep_oldfold --data-dir ./dat
 
 python predict.py --kernel-type 9c_b7ns_1e_640_ext_15ep --data-dir ./data/ --data-folder 768 --image-size 640 --enet-type tf_efficientnet_b7_ns
 
-python predict.py --kernel-type 9c_meta_1.5e-5_b7ns_384_ext_15ep --data-dir ./data/ --data-folder 512 --image-size 384 --enet-type tf_efficientnet_b7_ns --use-meta
+python predict.py --kernel-type 9c_meta_1.5e-5_b7ns_384_ext_15ep --data-dir ./data/ --data-folder 512 --image-size 384 --enet-type tf_efficientnet_b7_ns 
 
 python predict.py --kernel-type 9c_nest101_2e_640_ext_15ep --data-dir ./data/ --data-folder 768 --image-size 640 --enet-type resnest101
 
 python predict.py --kernel-type 9c_se_x101_640_ext_15ep --data-dir ./data/ --data-folder 768 --image-size 640 --enet-type seresnext101
 ```
 
-### Ensembling
+### Ensembling (앙상블)
 
-Ensemble the 18 single model's submission files (from previous step) into the final submission file.
+최종 평가 결과를 위해, 18개의 모델의 예측 결과를 모아서 최종 예측을 진행한다. 
 
-The submission file `final_sub1.csv` will be saved in root directory.
+root 폴더에 `final_sub1.csv`라는 형태로 출력을 만들어준다. 
 
 ```
 python ensemble.py
 ```
-
-### Trained Weights
-
-We published our trained weigths of the model settings above (which we won this competition):
-
-https://www.kaggle.com/boliu0/melanoma-winning-models
-
-Download it into `./weights/` then you can run `evaluate.py` and `predict.py` directly.
 
