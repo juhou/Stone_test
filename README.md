@@ -1,7 +1,6 @@
 # MMC image classification base-kernel
 
-MMC 연구실의 image classification 연구실험을 위한 base-kernel.
-
+MMC 연구실의 image classification 연구실험을 위한 base-kernel. 
 
 
 ## SOFTWARE 
@@ -76,6 +75,8 @@ cuddn 7.6.5
 ## Training
 
 
+SIIM-ISIC Melanoma Classification 커널 구조를 기반으로 작성하였다. https://www.kaggle.com/c/siim-isic-melanoma-classification/discussion/175412
+
 
 
 Terminal을 이용하는 경우 경로 설정 후 아래 코드를 직접 실행
@@ -138,7 +139,7 @@ python train.py --kernel-type 9c_nest101_2e_640_ext_15ep --data-dir ./data/ --da
 python train.py --kernel-type 9c_se_x101_640_ext_15ep --data-dir ./data/ --data-folder 768 --image-size 640 --enet-type seresnext101 --use-amp --CUDA_VISIBLE_DEVICES 0,1
 ```
 
-### (Optional) Evaluating
+## (Optional) Evaluating
 
 학습한 모델을 k-fold cross validation 진행한다. 앞에서 학습에 사용한 모델을 사용하거나, `--model-dir`안에 있는 모델을 명시하여 평가할 수 있다. 
 
@@ -182,7 +183,7 @@ python evaluate.py --kernel-type 9c_nest101_2e_640_ext_15ep --data-dir ./data/ -
 python evaluate.py --kernel-type 9c_se_x101_640_ext_15ep --data-dir ./data/ --data-folder 768 --image-size 640 --enet-type seresnext101
 ```
 
-### Predicting
+## Predicting
 
 Test 데이터에 따른 예측을 실시한다. 
 
@@ -226,7 +227,7 @@ python predict.py --kernel-type 9c_nest101_2e_640_ext_15ep --data-dir ./data/ --
 python predict.py --kernel-type 9c_se_x101_640_ext_15ep --data-dir ./data/ --data-folder 768 --image-size 640 --enet-type seresnext101
 ```
 
-### Ensembling (앙상블)
+## Ensembling (앙상블)
 
 최종 평가 결과를 위해, 18개의 모델의 예측 결과를 모아서 최종 예측을 진행한다. 
 
