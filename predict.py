@@ -30,7 +30,7 @@ edited by MMCLab, 허종욱, 2020
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('--kernel-type', type=str, required=True)
-    parser.add_argument('--data-dir', type=str, default='/raid/')
+    parser.add_argument('--data-dir', type=str, default='./data/')
     parser.add_argument('--data-folder', type=str, required=True)
     parser.add_argument('--image-size', type=int, required=True)
     parser.add_argument('--enet-type', type=str, required=True)
