@@ -193,7 +193,8 @@ def main():
     PROBS = []
     TARGETS = []
     dfs = []
-    for fold in range(5):
+    folds = [int(i) for i in args.fold.split(',')]
+    for fold in folds:
         print(f'Evaluate data fold{str(fold)}')
         df_valid = df_train[df_train['fold'] == fold]
 
@@ -251,7 +252,7 @@ def main():
     auc_all_raw = roc_auc_score(dfs['target'] == target_idx, dfs['pred'])
 
     dfs2 = dfs.copy()
-    for i in range(5):
+    for i in folds:
         dfs2.loc[dfs2['fold'] == i, 'pred'] = dfs2.loc[dfs2['fold'] == i, 'pred'].rank(pct=True)
     auc_all_rank = roc_auc_score(dfs2['target'] == target_idx, dfs2['pred'])
 
@@ -260,7 +261,7 @@ def main():
         dfs3 = dfs[dfs.is_ext == 0].copy().reset_index(drop=True)
         auc_no_ext_raw = roc_auc_score(dfs3['target'] == target_idx, dfs3['pred'])
 
-        for i in range(5):
+        for i in folds:
             dfs3.loc[dfs3['fold'] == i, 'pred'] = dfs3.loc[dfs3['fold'] == i, 'pred'].rank(pct=True)
         auc_no_ext_rank = roc_auc_score(dfs3['target'] == target_idx, dfs3['pred'])
 

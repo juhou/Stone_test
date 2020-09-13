@@ -1,5 +1,6 @@
 import os
 import time
+import re
 import argparse
 import numpy as np
 from tqdm import tqdm
@@ -40,7 +41,7 @@ Run -> Edit Configuration -> train.py 가 선택되었는지 확인
 
 Training list
 1. python train.py --kernel-type 5fold_b3_256_30ep --data-folder original_stone/ --enet-type tf_efficientnet_b3 --n-epochs 30 --image-size 256
-2. python train.py --kernel-type 10fold_b3_512_30ep --data-folder original_stone/ --enet-type tf_efficientnet_b3 --n-epochs 30 --image-size 512
+2. python train.py --kernel-type 10fold_b3_512_30ep --fold 0,1,2,3,4,5,6,7,8,9 --data-folder original_stone/ --enet-type tf_efficientnet_b3 --n-epochs 30 --image-size 512
 3. python train.py --kernel-type 5fold_b5_256_30ep --data-folder original_stone/ --enet-type tf_efficientnet_b5  --n-epochs 30 --image-size 256
 
 edited by MMCLab, 허종욱, 2020
@@ -350,11 +351,9 @@ def main():
     # 모델 트랜스폼 가져오기
     transforms_train, transforms_val = get_transforms(args.image_size)
 
-    # cross-validation의 fold를 통한 모델 앙상블
     folds = [int(i) for i in args.fold.split(',')]
     for fold in folds:
         run(fold, df_train, meta_features, n_meta_features, transforms_train, transforms_val, target_idx)
-
 
 
 if __name__ == '__main__':

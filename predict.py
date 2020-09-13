@@ -77,7 +77,8 @@ def main():
     test_loader = torch.utils.data.DataLoader(dataset_test, batch_size=args.batch_size, num_workers=args.num_workers)
 
     PROBS = []
-    for fold in range(5):
+    folds = [int(i) for i in args.fold.split(',')]
+    for fold in folds:
 
         if args.eval == 'best':
             model_file = os.path.join(args.model_dir, f'{args.kernel_type}_best_fold{fold}.pth')
