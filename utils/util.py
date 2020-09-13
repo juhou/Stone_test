@@ -1,11 +1,32 @@
 # Fix Warmup Bug
 from warmup_scheduler import GradualWarmupScheduler
+import random
+import torch
+import numpy as np
 
-# https://github.com/ildoonet/pytorch-gradual-warmup-lr
-#pip install git+https://github.com/ildoonet/pytorch-gradual-warmup-lr.git
+def set_seed(seed=0):
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)
+    torch.backends.cudnn.deterministic = True
+
+def get_trans(img, I):
+    if I >= 4:
+        img = img.transpose(2, 3)
+    if I % 4 == 0:
+        return img
+    elif I % 4 == 1:
+        return img.flip(2)
+    elif I % 4 == 2:
+        return img.flip(3)
+    elif I % 4 == 3:
+        return img.flip(2).flip(3)
 
 
 class GradualWarmupSchedulerV2(GradualWarmupScheduler):
+    # pip install git+https://github.com/ildoonet/pytorch-gradual-warmup-lr.git
     def __init__(self, optimizer, multiplier, total_epoch, after_scheduler=None):
         super(GradualWarmupSchedulerV2, self).__init__(optimizer, multiplier, total_epoch, after_scheduler)
     def get_lr(self):

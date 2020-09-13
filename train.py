@@ -1,6 +1,5 @@
 import os
 import time
-import random
 import argparse
 import numpy as np
 from tqdm import tqdm
@@ -10,11 +9,13 @@ from torch.utils.data import DataLoader
 import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data.sampler import RandomSampler
-from utils.util import GradualWarmupSchedulerV2
+from utils.util import *
 import apex
 from apex import amp
 from dataset import get_df, get_transforms, StoneDataset
 from models import Effnet_MMC, Resnest_MMC, Seresnext_MMC
+
+Precautions_msg = '(주의사항) ---- \n'
 
 
 '''
@@ -24,12 +25,12 @@ from models import Effnet_MMC, Resnest_MMC, Seresnext_MMC
 
 #### 실행법 ####
 Terminal을 이용하는 경우 경로 설정 후 아래 코드를 직접 실행
-python train.py --kernel-type 5fold_b7_100ep --data-folder original_stone/ --enet-type tf_efficientnet_b7_ns --n-epochs 100
+python train.py --kernel-type 5fold_b3_256_30ep --data-folder original_stone/ --enet-type tf_efficientnet_b3_ns --n-epochs 30
 
 pycharm의 경우: 
 Run -> Edit Configuration -> train.py 가 선택되었는지 확인 
 -> parameters 이동 후 아래를 입력 -> 적용하기 후 실행/디버깅
---kernel-type 5fold_b3_256_30ep --data-folder original_stone/ --enet-type tf_efficientnet_b7_ns --n-epochs 30
+--kernel-type 5fold_b3_256_30ep --data-folder original_stone/ --enet-type tf_efficientnet_b3_ns --n-epochs 30
 
 *** def parse_args(): 실행 파라미터에 대한 모든 정보가 있다.  
 *** def run(): 학습의 모든과정이 담긴 함수. 이곳에 다양한 trick을 적용하여 성능을 높혀보자. 
@@ -109,7 +110,6 @@ def parse_args():
     parser.add_argument('--use-ext', action='store_true')
     # 원본데이터에 추가로 외부 데이터를 사용할지 여부
 
-
     parser.add_argument('--batch-size', type=int, default=4) # 배치 사이즈
     parser.add_argument('--num-workers', type=int, default=32) # 데이터 읽어오는 스레드 개수
     parser.add_argument('--init-lr', type=float, default=3e-5) # 초기 러닝 레이트. pretrained를 쓰면 매우 작은값
@@ -118,15 +118,6 @@ def parse_args():
     args, _ = parser.parse_known_args()
     return args
 
-
-
-def set_seed(seed=0):
-    random.seed(seed)
-    np.random.seed(seed)
-    torch.manual_seed(seed)
-    torch.cuda.manual_seed(seed)
-    torch.cuda.manual_seed_all(seed)
-    torch.backends.cudnn.deterministic = True
 
 def train_epoch(model, loader, optimizer):
 
@@ -173,20 +164,6 @@ def train_epoch(model, loader, optimizer):
 
     train_loss = np.mean(train_loss)
     return train_loss
-
-
-def get_trans(img, I):
-
-    if I >= 4:
-        img = img.transpose(2, 3)
-    if I % 4 == 0:
-        return img
-    elif I % 4 == 1:
-        return img.flip(2)
-    elif I % 4 == 2:
-        return img.flip(3)
-    elif I % 4 == 3:
-        return img.flip(2).flip(3)
 
 
 def val_epoch(model, loader, target_idx, is_ext=None, n_test=1, get_output=False):
@@ -375,6 +352,10 @@ def main():
 
 
 if __name__ == '__main__':
+
+    print('----------------------------')
+    print(Precautions_msg)
+    print('----------------------------')
 
     # argument값 만들기
     args = parse_args()

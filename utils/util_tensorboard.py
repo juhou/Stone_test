@@ -1,20 +1,13 @@
 # imports
-import matplotlib.pyplot as plt
 import numpy as np
-
 import torch
 import torchvision
-import torchvision.transforms as transforms
-
-import torch.nn as nn
-import torch.nn.functional as F
-import torch.optim as optim
-
 from torch.utils.tensorboard import SummaryWriter
+import matplotlib.pyplot as plt
+
 '''
 Command Line에 다음과 같이 입력하여 tensorboard를 본다
 tensorboard --logdir=./runs/{kernel_type}
-
 '''
 
 

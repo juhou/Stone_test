@@ -5,7 +5,9 @@ import torch
 from torch.utils.data import DataLoader
 from dataset import get_df, get_transforms, StoneDataset
 from models import Effnet_MMC, Resnest_MMC, Seresnext_MMC
-from train import get_trans
+from utils.util import *
+
+Precautions_msg = '(주의사항) ---- \n'
 
 '''
 - predict.py
@@ -15,12 +17,12 @@ from train import get_trans
 
 #### 실행법 ####
 Terminal을 이용하는 경우 경로 설정 후 아래 코드를 직접 실행
-python predict.py --kernel-type 5fold_b3_30ep --data-folder original_stone/ --enet-type efficientnet_b3
+python predict.py --kernel-type 5fold_b3_256_30ep --data-folder original_stone/ --enet-type tf_efficientnet_b3_ns --n-epochs 30
 
 pycharm의 경우: 
 Run -> Edit Configuration -> predict.py 가 선택되었는지 확인 
 -> parameters 이동 후 아래를 입력 -> 적용하기 후 실행/디버깅
---kernel-type 5fold_b3_30ep --data-folder original_stone/ --enet-type efficientnet_b3
+--kernel-type 5fold_b3_256_30ep --data-folder original_stone/ --enet-type tf_efficientnet_b3_ns --n-epochs 30
 
 edited by MMCLab, 허종욱, 2020
 '''
@@ -133,6 +135,10 @@ def main():
 
 
 if __name__ == '__main__':
+
+    print('----------------------------')
+    print(Precautions_msg)
+    print('----------------------------')
 
     args = parse_args()
     os.makedirs(args.sub_dir, exist_ok=True)
