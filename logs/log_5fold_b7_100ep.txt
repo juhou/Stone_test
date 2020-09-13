@@ -498,3 +498,8 @@ Sun Sep 13 23:13:10 2020 Fold 4, Epoch 97, lr: 0.0000012, train loss: 0.22633, v
 Sun Sep 13 23:18:13 2020 Fold 4, Epoch 98, lr: 0.0000007, train loss: 0.20981, valid loss: 0.55096, Acc: 82.0968, AUC: 0.821919.
 Sun Sep 13 23:23:18 2020 Fold 4, Epoch 99, lr: 0.0000003, train loss: 0.20359, valid loss: 0.55698, Acc: 82.4194, AUC: 0.817897.
 Sun Sep 13 23:28:23 2020 Fold 4, Epoch 100, lr: 0.0000001, train loss: 0.19610, valid loss: 0.54778, Acc: 82.4194, AUC: 0.816150.
+Mon Sep 14 06:54:42 2020 Eval best:
+Accuracy : 88.10127
+AUC_all_raw : 0.90274
+AUC_all_rank : 0.90658
+

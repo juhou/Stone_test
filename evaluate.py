@@ -28,7 +28,7 @@ python evaluate.py --kernel-type 5fold_b3_256_30ep --data-folder original_stone/
 pycharm의 경우: 
 Run -> Edit Configuration -> evaluate.py 가 선택되었는지 확인 
 -> parameters 이동 후 아래를 입력 -> 적용하기 후 실행/디버깅
---kernel-type 5fold_b3_256_30ep --data-folder original_stone/ --enet-type tf_efficientnet_b3_ns --n-epochs 30
+--kernel-type 5fold_b3_256_30ep --data-folder original_stone/ --enet-type tf_efficientnet_b3_ns --n-epochs 30 --k-fold 5
 
 
 
