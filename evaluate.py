@@ -32,11 +32,6 @@ Run -> Edit Configuration -> evaluate.py 가 선택되었는지 확인
 
 
 
-Training list
-1. python train.py --kernel-type 5fold_b3_256_30ep --data-folder original_stone/ --enet-type tf_efficientnet_b3 --n-epochs 30 --image-size 256
-2. python train.py --kernel-type 10fold_b3_512_30ep --data-folder original_stone/ --enet-type tf_efficientnet_b3 --n-epochs 30 --image-size 512
-3. python train.py --kernel-type 5fold_b5_256_30ep --data-folder original_stone/ --enet-type tf_efficientnet_b5  --n-epochs 30 --image-size 256
-
 edited by MMCLab, 허종욱, 2020
 '''
 

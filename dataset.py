@@ -115,7 +115,7 @@ def get_df(kernel_type, data_dir, data_folder, out_dim = 1, use_meta = False, us
         # k-fold cross-validation
         regex = re.compile(r'\d+fold')
         k = int(regex.search(kernel_type).group().split('fold')[0])
-        print(f'Dataset: {f}-fold cross evaluation')
+        print(f'Dataset: {k}-fold cross evaluation')
 
         # 환자id : 분할 번호
         patients2fold = {i: i % k for i in range(patients)}
