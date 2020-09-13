@@ -1,6 +1,5 @@
 import os
 import time
-import re
 import argparse
 import numpy as np
 from tqdm import tqdm
@@ -41,7 +40,7 @@ Run -> Edit Configuration -> train.py 가 선택되었는지 확인
 
 Training list
 1. python train.py --kernel-type 5fold_b3_256_30ep --data-folder original_stone/ --enet-type tf_efficientnet_b3 --n-epochs 30 --image-size 256
-2. python train.py --kernel-type 10fold_b3_512_30ep --fold 0,1,2,3,4,5,6,7,8,9 --data-folder original_stone/ --enet-type tf_efficientnet_b3 --n-epochs 30 --image-size 512
+2. python train.py --kernel-type 10fold_b3_512_30ep --kfold 10 --data-folder original_stone/ --enet-type tf_efficientnet_b3 --n-epochs 30 --image-size 512
 3. python train.py --kernel-type 5fold_b5_256_30ep --data-folder original_stone/ --enet-type tf_efficientnet_b5  --n-epochs 30 --image-size 256
 
 edited by MMCLab, 허종욱, 2020
@@ -54,8 +53,7 @@ def parse_args():
 
     parser.add_argument('--kernel-type', type=str, required=True)
     # kernel_type : 실험 세팅에 대한 전반적인 정보가 담긴 고유 이름
-    # data fold에 대한 정보를 담는다.
-    # kernel_type = {5fold, ... } + {네트워크} + ...
+
 
     parser.add_argument('--data-dir', type=str, default='./data/')
     # base 데이터 폴더 ('./data/')
@@ -97,9 +95,9 @@ def parse_args():
     parser.add_argument('--CUDA_VISIBLE_DEVICES', type=str, default='0')
     # 학습에 사용할 GPU 번호
 
-    parser.add_argument('--fold', type=str, default='0,1,2,3,4')
+    parser.add_argument('--k-fold', type=int, default=5)
     # data cross-validation
-    # f-fold 이후, 학습에 직접 사용할 fold 리스트
+    # k-fold의 k 값을 명시
 
     parser.add_argument('--log-dir', type=str, default='./logs')
     # Evaluation results will be printed out and saved to ./logs/
@@ -340,7 +338,7 @@ def main():
 
     # 데이터셋 세팅 가져오기
     df_train, df_test, meta_features, n_meta_features, target_idx = get_df(
-        kernel_type = args.kernel_type,
+        k_fold = args.k_fold,
         out_dim = args.out_dim,
         data_dir = args.data_dir,
         data_folder = args.data_folder,
@@ -351,7 +349,7 @@ def main():
     # 모델 트랜스폼 가져오기
     transforms_train, transforms_val = get_transforms(args.image_size)
 
-    folds = [int(i) for i in args.fold.split(',')]
+    folds = range(args.k_fold)
     for fold in folds:
         run(fold, df_train, meta_features, n_meta_features, transforms_train, transforms_val, target_idx)
 

@@ -53,9 +53,7 @@ def parse_args():
     parser.add_argument('--model-dir', type=str, default='./weights')
     parser.add_argument('--log-dir', type=str, default='./logs')
     parser.add_argument('--oof-dir', type=str, default='./oofs')
-    # Evaluation results will be printed out and saved to ./logs/
-    # Out-of-folds prediction results will be saved to ./oofs/
-
+    parser.add_argument('--k-fold', type=int, default=5)
     parser.add_argument('--eval', type=str, choices=['best', 'best_no_ext', 'final'], default="best")
     parser.add_argument('--CUDA_VISIBLE_DEVICES', type=str, default='0')
     parser.add_argument('--n-meta-dim', type=str, default='512,128')
@@ -179,7 +177,7 @@ def main():
 
     # 데이터셋 세팅 가져오기
     df_train, df_test, meta_features, n_meta_features, target_idx = get_df(
-        kernel_type = args.kernel_type,
+        k_fold = args.k_fold,
         out_dim = args.out_dim,
         data_dir = args.data_dir,
         data_folder = args.data_folder,
@@ -193,7 +191,9 @@ def main():
     PROBS = []
     TARGETS = []
     dfs = []
-    folds = [int(i) for i in args.fold.split(',')]
+
+
+    folds = range(args.k_fold)
     for fold in folds:
         print(f'Evaluate data fold{str(fold)}')
         df_valid = df_train[df_train['fold'] == fold]

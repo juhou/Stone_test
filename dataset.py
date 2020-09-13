@@ -1,5 +1,4 @@
 import os
-import re
 import cv2
 import numpy as np
 import pandas as pd
@@ -73,7 +72,7 @@ class StoneDataset(Dataset):
             return data, torch.tensor(self.csv.iloc[index].target).long()
 
 
-def get_df(kernel_type, data_dir, data_folder, out_dim = 1, use_meta = False, use_ext = False):
+def get_df(k_fold, data_dir, data_folder, out_dim = 1, use_meta = False, use_ext = False):
     '''
     get DataFrame
     데이터베이스 관리하는 CSV 파일을 읽어오고, 교차 validation을 위해 분할함
@@ -111,14 +110,14 @@ def get_df(kernel_type, data_dir, data_folder, out_dim = 1, use_meta = False, us
     # 데이터 인덱스 : fold 번호
     # x번 데이터가 fold 번 분할로 들어간다라는 의미
     # train.py input arg에서 fold를 수정해줘야함
-    if 'fold' in kernel_type:
+    if 1 < k_fold:
         # k-fold cross-validation
-        regex = re.compile(r'\d+fold')
-        k = int(regex.search(kernel_type).group().split('fold')[0])
-        print(f'Dataset: {k}-fold cross evaluation')
+        # regex = re.compile(r'\d+fold')
+        # k = int(regex.search(kernel_type).group().split('fold')[0])
+        print(f'Dataset: {k_fold}-fold cross evaluation')
 
         # 환자id : 분할 번호
-        patients2fold = {i: i % k for i in range(patients)}
+        patients2fold = {i: i % k_fold for i in range(patients)}
     else:
         pass
         # 다른 폴딩 샘플

@@ -39,6 +39,7 @@ def parse_args():
     parser.add_argument('--out-dim', type=int, default=2)
     parser.add_argument('--use-amp', action='store_true')
     parser.add_argument('--use-ext', action='store_true')
+    parser.add_argument('--k-fold', type=int, default=5)
 
     parser.add_argument('--use-meta', action='store_true')
     parser.add_argument('--DEBUG', action='store_true')
@@ -77,7 +78,7 @@ def main():
     test_loader = torch.utils.data.DataLoader(dataset_test, batch_size=args.batch_size, num_workers=args.num_workers)
 
     PROBS = []
-    folds = [int(i) for i in args.fold.split(',')]
+    folds = range(args.k_fold)
     for fold in folds:
 
         if args.eval == 'best':
