@@ -29,11 +29,16 @@ if __name__ == '__main__':
 
 
     args = parse_args()
+
+    # 폴더에서 csv읽어오기
     subs = [pd.read_csv(csv) for csv in sorted(glob(os.path.join(args.sub_dir, '*csv')))]
     sub_probs = [sub.target.rank(pct=True).values for sub in subs]
-    
-    wts = [1/18]*18 # 균등 가중치
-    assert len(wts)==len(sub_probs)
+
+    # 균등 가중치
+    ensem_number = len(sub_probs)
+    wts = [1/ensem_number]*ensem_number
+
+    #
     sub_ens = np.sum([wts[i]*sub_probs[i] for i in range(len(wts))], axis=0)
 
     # 앙상블 최종 결과를 저장함

@@ -12,7 +12,7 @@ from dataset import get_df, get_transforms, StoneDataset
 from models import Effnet_MMC, Resnest_MMC, Seresnext_MMC
 from utils.util import *
 
-Precautions_msg = '(주의사항) Stone dataset의 경우 사람당 4장의 이미지기때문에 batch사이즈를 4의 배수로 해야 제대로 평가 된다.\n'
+Precautions_msg = '(주의사항) Stone dataset의 경우 사람당 4장의 이미지기때문에 batch사이즈를 4의 배수로 해야 제대로 평가 된다.'
 
 
 '''

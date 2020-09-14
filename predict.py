@@ -7,7 +7,7 @@ from dataset import get_df, get_transforms, StoneDataset
 from models import Effnet_MMC, Resnest_MMC, Seresnext_MMC
 from utils.util import *
 
-Precautions_msg = '(주의사항) ---- \n'
+Precautions_msg = '(주의사항) Stone dataset의 경우 사람당 4장의 이미지기때문에 batch사이즈를 4의 배수로 해야 제대로 평가 된다.'
 
 '''
 - predict.py
@@ -17,12 +17,17 @@ Precautions_msg = '(주의사항) ---- \n'
 
 #### 실행법 ####
 Terminal을 이용하는 경우 경로 설정 후 아래 코드를 직접 실행
-python predict.py --kernel-type 5fold_b3_256_30ep --data-folder original_stone/ --enet-type tf_efficientnet_b3_ns --n-epochs 30
+python predict.py --kernel-type 5fold_b3_256_30ep --data-folder original_stone/ --enet-type tf_efficientnet_b3 --n-epochs 30
 
 pycharm의 경우: 
 Run -> Edit Configuration -> predict.py 가 선택되었는지 확인 
 -> parameters 이동 후 아래를 입력 -> 적용하기 후 실행/디버깅
---kernel-type 5fold_b3_256_30ep --data-folder original_stone/ --enet-type tf_efficientnet_b3_ns --n-epochs 30
+--kernel-type 5fold_b3_256_30ep --data-folder original_stone/ --enet-type tf_efficientnet_b3 --n-epochs 30
+
+
+python predict.py --kernel-type 5fold_b7_100ep --data-folder original_stone/ --enet-type tf_efficientnet_b7_ns --n-epochs 100 --image-size 256
+python predict.py --kernel-type 5fold_b3_256_30ep --data-folder original_stone/ --enet-type tf_efficientnet_b3 --n-epochs 30 --image-size 256
+
 
 edited by MMCLab, 허종욱, 2020
 '''
@@ -59,7 +64,7 @@ def main():
 
     # 데이터셋 세팅 가져오기
     df_train, df_test, meta_features, n_meta_features, target_idx = get_df(
-        kernel_type = args.kernel_type,
+        k_fold = args.k_fold,
         out_dim = args.out_dim,
         data_dir = args.data_dir,
         data_folder = args.data_folder,
@@ -127,6 +132,15 @@ def main():
                         probs += l.softmax(1)
 
                 probs /= args.n_test
+
+                ####################################################
+                # 4장 의료 데이터를 묶음으로 확률계산. 평균이용
+                # 타 프로젝트 진행시 삭제해야함
+                for b_i in range(int(data.shape[0] / 4)):
+                    b_i4 = b_i * 4
+                    probs[0 + b_i4:4 + b_i4, 0] = torch.mean(probs[0 + b_i4:4 + b_i4, 0])
+                    probs[0 + b_i4:4 + b_i4, 1] = torch.mean(probs[0 + b_i4:4 + b_i4, 1])
+                ####################################################
 
                 PROBS.append(probs.detach().cpu())
 
