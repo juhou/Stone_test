@@ -8,7 +8,7 @@ from sklearn.metrics import roc_auc_score
 import torch
 from torch.utils.data import DataLoader
 import torch.nn as nn
-from dataset import get_df, get_transforms, StoneDataset
+from dataset import get_df_stone, get_transforms, MMC_ClassificationDataset
 from models import Effnet_MMC, Resnest_MMC, Seresnext_MMC
 from utils.util import *
 
@@ -176,7 +176,7 @@ def val_epoch_stonedata(model, loader, target_idx, is_ext=None, n_test=1, get_ou
 def main():
 
     # 데이터셋 세팅 가져오기
-    df_train, df_test, meta_features, n_meta_features, target_idx = get_df(
+    df_train, df_test, meta_features, n_meta_features, target_idx = get_df_stone(
         k_fold = args.k_fold,
         out_dim = args.out_dim,
         data_dir = args.data_dir,
@@ -208,7 +208,7 @@ def main():
                 df_valid[df_valid['target'] != target_idx].sample(args.batch_size * 3)
             ])
 
-        dataset_valid = StoneDataset(df_valid, 'valid', meta_features, transform=transforms_val)
+        dataset_valid = MMC_ClassificationDataset(df_valid, 'valid', meta_features, transform=transforms_val)
         valid_loader = torch.utils.data.DataLoader(dataset_valid, batch_size=args.batch_size, num_workers=args.num_workers)
 
         if args.eval == 'best':
@@ -265,7 +265,9 @@ def main():
             dfs3.loc[dfs3['fold'] == i, 'pred'] = dfs3.loc[dfs3['fold'] == i, 'pred'].rank(pct=True)
         auc_no_ext_rank = roc_auc_score(dfs3['target'] == target_idx, dfs3['pred'])
 
-        content = time.ctime() + ' ' + f'Eval {args.eval}:\nAccuracy : {Accuracy:.5f}\nauc_all_raw : {auc_all_raw:.5f}\nauc_all_rank : {auc_all_rank:.5f}\nauc_no_ext_raw : {auc_no_ext_raw:.5f}\nauc_no_ext_rank : {auc_no_ext_rank:.5f}\n'
+        content = time.ctime() + ' ' + f'Eval {args.eval}:\nAccuracy : {Accuracy:.5f}\n' \
+                                       f'auc_all_raw : {auc_all_raw:.5f}\nauc_all_rank : {auc_all_rank:.5f}\n' \
+                                       f'auc_no_ext_raw : {auc_no_ext_raw:.5f}\nauc_no_ext_rank : {auc_no_ext_rank:.5f}\n'
     else:
         content = time.ctime() + ' ' + f'Eval {args.eval}:\nAccuracy : {Accuracy:.5f}\n' \
                   f'AUC_all_raw : {auc_all_raw:.5f}\nAUC_all_rank : {auc_all_rank:.5f}\n'

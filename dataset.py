@@ -7,77 +7,24 @@ import torch
 from torch.utils.data import Dataset
 from tqdm import tqdm
 
+'''
+image classification용 CSV 파일 만들때 주의할점
+아래 두개는 반드시 포함해야한다. 
 
-class StoneDataset(Dataset):
-    '''
-        class 내가만든_데이터셋(Dataset):
-            def __init__(self, csv, mode, meta_features, transform=None):
-                # 데이터셋 초기화
+target: 클래스 번호. 예: {0, 1}
+image_name: 이미지 파일 이름
 
-            def __len__(self):
-                # 데이터셋 크기 리턴
-                return self.csv.shape[0]
-
-            def __getitem__(self, index):
-                # 인덱스에 해당하는 이미지 리턴
+'''
 
 
-        self.mode = mode
-        # train / valid
-        self.use_meta = meta_features is not None
-        # 안쓸경우 None
-        self.meta_features = meta_features
-        # 안쓸경우 None
-        self.transform = transform
-        # 이미지 트랜스폼
+def get_df_stone(k_fold, data_dir, data_folder, out_dim = 1, use_meta = False, use_ext = False):
     '''
 
-    def __init__(self, csv, mode, meta_features, transform=None):
-
-        self.csv = csv.reset_index(drop=True)
-        self.mode = mode # train / valid
-        self.use_meta = meta_features is not None
-        self.meta_features = meta_features
-        self.transform = transform
-
-    def __len__(self):
-        return self.csv.shape[0]
-
-    def __getitem__(self, index):
-
-        row = self.csv.iloc[index]
-
-        image = cv2.imread(row.filepath)
-        image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
-
-        if self.transform is not None:
-            res = self.transform(image=image)
-            image = res['image'].astype(np.float32)
-        else:
-            image = image.astype(np.float32)
-
-        image = image.transpose(2, 0, 1)
-
-        # 메타 데이터를 쓰는 경우엔 image와 함께 텐서 생성
-        if self.use_meta:
-            data = (torch.tensor(image).float(), torch.tensor(self.csv.iloc[index][self.meta_features]).float())
-        else:
-            data = torch.tensor(image).float()
-
-        if self.mode == 'test':
-            # Test 의 경우 정답을 모르기에 데이터만 리턴
-            return data
-        else:
-            # training 의 경우 CSV의 스톤여부를 타겟으로 보내줌
-            return data, torch.tensor(self.csv.iloc[index].target).long()
-
-
-def get_df(k_fold, data_dir, data_folder, out_dim = 1, use_meta = False, use_ext = False):
-    '''
-    get DataFrame
+    ##### get DataFrame
     데이터베이스 관리하는 CSV 파일을 읽어오고, 교차 validation을 위해 분할함
+    stone 데이터셋을 위해 수정된 함수
 
-    :param kernel_type: argument에서 받은 네트워크 설명 문구
+    :param k_fold: argument에서 받은 k_fold 값
     :param out_dim: 네트워크 출력 개수
     :param data_dir: 데이터 베이스 폴더
     :param data_folder: 데이터 폴더
@@ -85,19 +32,15 @@ def get_df(k_fold, data_dir, data_folder, out_dim = 1, use_meta = False, use_ext
     :param use_ext: 외부 추가 데이터 사용 여부
 
     :return:
-    :mel_idx 양성을 판단하는 인덱스 번호
-
-    참고사항: tfrecord는 텐서플로우 제공하는 데이터 포멧
-    https://bcho.tistory.com/1190
+    :target_idx 양성을 판단하는 인덱스 번호
     '''
 
     # data 읽어오기 (pd.read_csv / DataFrame으로 저장)
-    # https://rfriend.tistory.com/250
     df_train = pd.read_csv(os.path.join(data_dir, data_folder, 'train.csv'))
 
     # 비어있는 데이터 버리고 데이터 인덱스를 재지정함
     # https://kongdols-room.tistory.com/123
-    # df_train = df_train[df_train['foobar_index_name'] != -1].reset_index(drop=True)
+    # df_train = df_train[df_train['인덱스 이름'] != -1].reset_index(drop=True)
 
     # 이미지 이름을 경로로 변환하기 (pd.DataFrame / apply, map, applymap에 대해 공부)
     # http://www.leejungmin.org/post/2018/04/21/pandas_apply_and_map/
@@ -105,74 +48,70 @@ def get_df(k_fold, data_dir, data_folder, out_dim = 1, use_meta = False, use_ext
 
     # 교차 검증을 위해 이미지 리스트들에 분리된 번호를 매김
     patients = len(df_train['patient_id'].unique())
-    print(f'사람 인원수 : {patients}')
+    print(f'Original dataset의 사람 인원수 : {patients}')
 
-    # 데이터 인덱스 : fold 번호
-    # x번 데이터가 fold 번 분할로 들어간다라는 의미
-    # train.py input arg에서 fold를 수정해줘야함
-    if 1 < k_fold:
-        # k-fold cross-validation
-        # regex = re.compile(r'\d+fold')
-        # k = int(regex.search(kernel_type).group().split('fold')[0])
-        print(f'Dataset: {k_fold}-fold cross-validation')
+    # 데이터 인덱스 : fold 번호. (fold)번 분할뭉치로 간다
+    # train.py input arg에서 k-fold를 수정해줘야함 (default:5)
+    print(f'Dataset: {k_fold}-fold cross-validation')
 
-        # 환자id : 분할 번호
-        patients2fold = {i: i % k_fold for i in range(patients)}
-    else:
-        pass
-        # 다른 폴딩 샘플
-        # person2fold = {
-        #     8: 0, 5: 0, 11: 0,
-        #     7: 1, 0: 1, 6: 1,
-        #     10: 2, 12: 2, 13: 2,
-        #     9: 3, 1: 3, 3: 3,
-        #     14: 4, 2: 4, 4: 4,
-        # }
+    # 환자id : 분할 번호
+    patients2fold = {i: i % k_fold for i in range(patients)}
 
     df_train['fold'] = df_train['patient_id'].map(patients2fold)
+    df_train['is_ext'] = 0  # 원본데이터=0, 외부데이터=1
 
     # 외부 데이터를 사용할 경우 이곳을 구현
     if use_ext:
-        pass
         '''
+        ####################################################
+        외부 데이터를 사용할 경우에 대한 구현 - begin
+        ####################################################
+        '''
+        # 외부 데이터베이스 경로
+        ext_data_folder = 'ext_stone1/'
+
         # 외부 추가 데이터 (external data)
         # data 읽어오기 (pd.read_csv / DataFrame으로 저장)
-        ext_data_folder = 'additional_data/'
-        df_train2 = pd.read_csv(os.path.join(data_dir, ext_data_folder, 'train.csv'))
-        
-        # 위의 원본 데이터 입력 예제와 비슷하게 구현하면 됨. 
-    
-    
-        # 특이사항: 출력의 크기에 따라서 레이블을 바꿔야 하는 경우 아래코드 사용
-        if out_dim == 2:
-            # output 수에 따른 외부 데이터 정리 예시
-            df_train['target'] = df_train['target'].apply(lambda x: x.replace('0', '1'))
-        elif out_dim == 1:
-            pass
-        else:
-            raise NotImplementedError()
-        
-        # concat train data
-        df_train2['is_ext'] = 1
-        df_train = pd.concat([df_train, df_train2]).reset_index(drop=True)
-        '''
-    else:
-        df_train['is_ext'] = 0  # 원본데이터=0, 외부데이터=1
+        df_train_ext = pd.read_csv(os.path.join(data_dir, ext_data_folder, 'train.csv'))
 
-    
-    # test data (주의: 현재 테스트가 없어서, 동일한 데이터를 사용함)
+        df_train_ext['filepath'] = df_train_ext['image_name'].apply(
+            lambda x: os.path.join(data_dir, f'{ext_data_folder}train', x))  # f'{x}.jpg'
+
+        patients = len(df_train_ext['patient_id'].unique())
+        print(f'External dataset의 사람 인원수 : {patients}')
+
+        # 외부 데이터의 fold를 -1로 설정
+        # fold에서 제외하면 validation에 사용되지 않고 항상 training set에 포함된다.
+        df_train_ext['fold'] = -1
+
+        # concat train data
+        df_train_ext['is_ext'] = 1
+
+        # 데이터셋 전체를 다 쓰지 않고 일부만 사용
+        df_train_ext = df_train_ext.sample(1024)
+        df_train = pd.concat([df_train, df_train_ext]).reset_index(drop=True)
+
+    # test data
     df_test = pd.read_csv(os.path.join(data_dir, data_folder, 'test.csv'))
     df_test['filepath'] = df_test['image_name'].apply(lambda x: os.path.join(data_dir, f'{data_folder}test', x)) # f'{x}.jpg'
 
-    # 메타 데이터를 사용하는 경우 (나이, 성별 등)
-    # 아래쪽 함수 참조
+    '''
+    ####################################################
+    메타 데이터를 사용하는 경우 (나이, 성별 등)
+    ####################################################
+    '''
     if use_meta:
-        df_train, df_test, meta_features, n_meta_features = get_meta_data(df_train, df_test)
+        df_train, df_test, meta_features, n_meta_features = get_meta_data_stoneproject(df_train, df_test)
     else:
         meta_features = None
         n_meta_features = 0
 
-    # class mapping - 정답 레이블을 기록
+
+    '''
+    ####################################################
+    class mapping - 정답 레이블을 기록 (csv의 target)
+    ####################################################
+    '''
     diagnosis2idx = {d: idx for idx, d in enumerate(sorted(df_train.target.unique()))}
     df_train['target'] = df_train['target'].map(diagnosis2idx)
 
@@ -180,18 +119,16 @@ def get_df(k_fold, data_dir, data_folder, out_dim = 1, use_meta = False, use_ext
     # 여기서는 stone 데이터를 타겟으로 삼음
     target_idx = diagnosis2idx[1]
 
+
     return df_train, df_test, meta_features, n_meta_features, target_idx
 
 
-
-def get_meta_data(df_train, df_test):
+def get_meta_data_stoneproject(df_train, df_test):
     '''
-    메타 데이터를 사용할 경우
+    ####################################################
+    메타 데이터를 사용할 경우 세팅 함수
     (이미지를 표현하는 정보: 성별, 나이, 사람당 사진수, 이미지 크기 등)
-
-    :param df_train:
-    :param df_test:
-    :return:
+    ####################################################
     '''
 
     # One-hot encoding of targeted feature
@@ -232,11 +169,67 @@ def get_meta_data(df_train, df_test):
         test_sizes[i] = os.path.getsize(img_path)
     df_test['image_size'] = np.log(test_sizes)
 
-    # df_train.columns에서
+    # df_train.columns에서 모든 정보를 가져옴
     meta_features = ['sex', 'age', 'n_images', 'image_size'] + [col for col in df_train.columns if col.startswith('site_')]
     n_meta_features = len(meta_features)
 
     return df_train, df_test, meta_features, n_meta_features
+
+
+
+
+class MMC_ClassificationDataset(Dataset):
+    '''
+    MMC_ClassificationDataset 클래스
+    일반적인 이미지 classification을 위한 데이터셋 클래스
+        class 내가만든_데이터셋(Dataset):
+            def __init__(self, csv, mode, meta_features, transform=None):
+                # 데이터셋 초기화
+
+            def __len__(self):
+                # 데이터셋 크기 리턴
+                return self.csv.shape[0]
+
+            def __getitem__(self, index):
+                # 인덱스에 해당하는 이미지 리턴
+    '''
+
+    def __init__(self, csv, mode, meta_features, transform=None):
+        self.csv = csv.reset_index(drop=True)
+        self.mode = mode # train / valid
+        self.use_meta = meta_features is not None
+        self.meta_features = meta_features
+        self.transform = transform
+
+    def __len__(self):
+        return self.csv.shape[0]
+
+    def __getitem__(self, index):
+        row = self.csv.iloc[index]
+        image = cv2.imread(row.filepath)
+        image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
+
+        # 이미지 tranform 적용
+        if self.transform is not None:
+            res = self.transform(image=image)
+            image = res['image'].astype(np.float32)
+        else:
+            image = image.astype(np.float32)
+
+        image = image.transpose(2, 0, 1)
+
+        # 메타 데이터를 쓰는 경우엔 image와 함께 텐서 생성
+        if self.use_meta:
+            data = (torch.tensor(image).float(), torch.tensor(self.csv.iloc[index][self.meta_features]).float())
+        else:
+            data = torch.tensor(image).float()
+
+        if self.mode == 'test':
+            # Test 의 경우 정답을 모르기에 데이터만 리턴
+            return data
+        else:
+            # training 의 경우 CSV의 스톤여부를 타겟으로 보내줌
+            return data, torch.tensor(self.csv.iloc[index].target).long()
 
 
 

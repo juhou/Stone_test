@@ -3,7 +3,7 @@ import argparse
 from tqdm import tqdm
 import torch
 from torch.utils.data import DataLoader
-from dataset import get_df, get_transforms, StoneDataset
+from dataset import get_df_stone, get_transforms, MMC_ClassificationDataset
 from models import Effnet_MMC, Resnest_MMC, Seresnext_MMC
 from utils.util import *
 
@@ -63,7 +63,7 @@ def parse_args():
 def main():
 
     # 데이터셋 세팅 가져오기
-    df_train, df_test, meta_features, n_meta_features, target_idx = get_df(
+    df_train, df_test, meta_features, n_meta_features, target_idx = get_df_stone(
         k_fold = args.k_fold,
         out_dim = args.out_dim,
         data_dir = args.data_dir,
@@ -79,7 +79,7 @@ def main():
     # 문제가 발생한 경우 배치 사이즈를 조정해서 해야할듯
     if args.DEBUG:
         df_test = df_test.sample(args.batch_size * 3)
-    dataset_test = StoneDataset(df_test, 'test', meta_features, transform=transforms_val)
+    dataset_test = MMC_ClassificationDataset(df_test, 'test', meta_features, transform=transforms_val)
     test_loader = torch.utils.data.DataLoader(dataset_test, batch_size=args.batch_size, num_workers=args.num_workers)
 
     PROBS = []

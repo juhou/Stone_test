@@ -12,7 +12,7 @@ from torch.utils.data.sampler import RandomSampler
 from utils.util import *
 import apex
 from apex import amp
-from dataset import get_df, get_transforms, StoneDataset
+from dataset import get_df_stone, get_transforms, MMC_ClassificationDataset
 from models import Effnet_MMC, Resnest_MMC, Seresnext_MMC
 
 Precautions_msg = '(주의사항) ---- \n'
@@ -42,6 +42,8 @@ Training list
 1. python train.py --kernel-type 5fold_b3_256_30ep --data-folder original_stone/ --enet-type tf_efficientnet_b3 --n-epochs 30 --image-size 256
 2. python train.py --kernel-type 10fold_b3_512_30ep --k-fold 10 --data-folder original_stone/ --enet-type tf_efficientnet_b3 --n-epochs 30 --image-size 512
 3. python train.py --kernel-type 5fold_b5_256_30ep --data-folder original_stone/ --enet-type tf_efficientnet_b5  --n-epochs 30 --image-size 256
+4. python train.py --kernel-type 5fold_b3_256_30ep_ext --data-folder original_stone/ --enet-type tf_efficientnet_b3 --n-epochs 30 --image-size 256 --use-ext
+
 
 edited by MMCLab, 허종욱, 2020
 '''
@@ -115,7 +117,7 @@ def parse_args():
     parser.add_argument('--use-ext', action='store_true')
     # 원본데이터에 추가로 외부 데이터를 사용할지 여부
 
-    parser.add_argument('--batch-size', type=int, default=4) # 배치 사이즈
+    parser.add_argument('--batch-size', type=int, default=16) # 배치 사이즈
     parser.add_argument('--num-workers', type=int, default=32) # 데이터 읽어오는 스레드 개수
     parser.add_argument('--init-lr', type=float, default=3e-5) # 초기 러닝 레이트. pretrained를 쓰면 매우 작은값
     parser.add_argument('--n-epochs', type=int, default=100) # epoch 수
@@ -262,14 +264,12 @@ def run(fold, df, meta_features, n_meta_features, transforms_train, transforms_v
         if len(df_valid) % args.batch_size == 1:
             df_valid = df_valid.sample(len(df_valid)-1)
 
-    # 데이터셋 읽어오기
-    dataset_train = StoneDataset(df_train, 'train', meta_features, transform=transforms_train)
-    dataset_valid = StoneDataset(df_valid, 'valid', meta_features, transform=transforms_val)
 
-    # 데이터셋 로더
+    # 데이터셋 읽어오기
+    dataset_train = MMC_ClassificationDataset(df_train, 'train', meta_features, transform=transforms_train)
+    dataset_valid = MMC_ClassificationDataset(df_valid, 'valid', meta_features, transform=transforms_val)
     train_loader = torch.utils.data.DataLoader(dataset_train, batch_size=args.batch_size, sampler=RandomSampler(dataset_train), num_workers=args.num_workers)
     valid_loader = torch.utils.data.DataLoader(dataset_valid, batch_size=args.batch_size, num_workers=args.num_workers)
-
 
     model = ModelClass(
         args.enet_type,
@@ -337,7 +337,7 @@ def run(fold, df, meta_features, n_meta_features, transforms_train, transforms_v
 def main():
 
     # 데이터셋 세팅 가져오기
-    df_train, df_test, meta_features, n_meta_features, target_idx = get_df(
+    df_train, df_test, meta_features, n_meta_features, target_idx = get_df_stone(
         k_fold = args.k_fold,
         out_dim = args.out_dim,
         data_dir = args.data_dir,
