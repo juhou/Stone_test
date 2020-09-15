@@ -11,6 +11,8 @@ import torch.nn as nn
 from dataset import get_df_stone, get_transforms, MMC_ClassificationDataset
 from models import Effnet_MMC, Resnest_MMC, Seresnext_MMC
 from utils.util import *
+from utils.torchsummary import summary
+from utils.grad_cam import *
 
 Precautions_msg = '(주의사항) Stone dataset의 경우 사람당 4장의 이미지기때문에 batch사이즈를 4의 배수로 해야 제대로 평가 된다.'
 
@@ -20,6 +22,8 @@ Precautions_msg = '(주의사항) Stone dataset의 경우 사람당 4장의 이�
 
 학습한 모델을 평가하는 코드
 Test셋이 아니라 학습때 살펴본 validation셋을 활용한다. 
+grad-cam 실행한다. 
+
 
 #### 실행법 ####
 Terminal을 이용하는 경우 경로 설정 후 아래 코드를 직접 실행
@@ -43,7 +47,7 @@ def parse_args():
     parser.add_argument('--data-folder', type=str, required=True)
     parser.add_argument('--image-size', type=int, required=True)
     parser.add_argument('--enet-type', type=str, required=True)
-    parser.add_argument('--batch-size', type=int, default=8)
+    parser.add_argument('--batch-size', type=int, default=4)
     parser.add_argument('--num-workers', type=int, default=32)
     parser.add_argument('--out-dim', type=int, default=2)
     parser.add_argument('--use-amp', action='store_true')
@@ -53,6 +57,11 @@ def parse_args():
     parser.add_argument('--model-dir', type=str, default='./weights')
     parser.add_argument('--log-dir', type=str, default='./logs')
     parser.add_argument('--oof-dir', type=str, default='./oofs')
+
+    # grad-cam을 계산해서 보여준다.
+    parser.add_argument('--use-gradcam', action='store_true')
+    parser.add_argument('--gradcam-dir', type=str, default='./gradcams')
+
     parser.add_argument('--k-fold', type=int, default=5)
     parser.add_argument('--eval', type=str, choices=['best', 'best_no_ext', 'final'], default="best")
     parser.add_argument('--CUDA_VISIBLE_DEVICES', type=str, default='0')
@@ -120,7 +129,8 @@ def val_epoch_stonedata(model, loader, target_idx, is_ext=None, n_test=1, get_ou
     LOGITS = []
     PROBS = []
     TARGETS = []
-    with torch.no_grad():
+
+    with torch.no_grad(): # grad-cam 할때는 꺼야함
         for (data, target) in tqdm(loader):
 
             if args.use_meta:
@@ -163,6 +173,31 @@ def val_epoch_stonedata(model, loader, target_idx, is_ext=None, n_test=1, get_ou
     PROBS = torch.cat(PROBS).numpy()
     TARGETS = torch.cat(TARGETS).numpy()
 
+
+
+    # if args.use_gradcam:
+    #     print("calculate gradcam: \n")
+    #     for (data, target) in tqdm(loader):
+    #         data, target = data.to(device), target.to(device)
+    #
+    #         # Grad_cam visualization
+    #         gcam = GradCAM(model=model)
+    #         probs, ids = gcam.forward(data)
+    #         ids_ = torch.LongTensor([[target_idx]] * args.batch_size).to(device)
+    #
+    #         gcam.backward(ids=ids_)
+    #         target_layer = "enet"
+    #         classes = ['normal', 'stone']
+    #
+    #         # Grad-CAM
+    #         regions = gcam.generate(target_layer=target_layer)
+    #         raw_images = data.tolist()
+    #         for j in range(len(data)):
+    #             print("\t#{}: {} ({:.5f})".format(j, classes[target_idx], float(probs[ids == target_idx][j])))
+    #             save_gradcam(filename=os.path.join(args.gradcam_dir, args.kernel_type,
+    #                                                f"/{j}-gradcam.png"),
+    #                          gcam=regions[j, 0], raw_image=raw_images[j])
+
     if get_output:
         return LOGITS, PROBS, TARGETS
     else:
@@ -175,7 +210,11 @@ def val_epoch_stonedata(model, loader, target_idx, is_ext=None, n_test=1, get_ou
 
 def main():
 
-    # 데이터셋 세팅 가져오기
+    '''
+    ####################################################
+    # stone data 데이터셋 : dataset.get_df_stone
+    ####################################################
+    '''
     df_train, df_test, meta_features, n_meta_features, target_idx = get_df_stone(
         k_fold = args.k_fold,
         out_dim = args.out_dim,
@@ -226,6 +265,16 @@ def main():
         )
         model = model.to(device)
 
+        # model summary
+        if args.use_meta:
+            pass
+            # 코드 확인이 필요함
+            # summary(model, [(3, args.image_size, args.image_size), n_meta_features])
+        else:
+            if fold == 0: # 한번만
+                summary(model, (3, args.image_size, args.image_size))
+
+
         try:  # single GPU model_file
             model.load_state_dict(torch.load(model_file), strict=True)
         except:  # multi GPU model_file
@@ -238,7 +287,11 @@ def main():
 
         model.eval()
 
-        # stone data를 위한 평가함수
+        '''
+        ####################################################
+        # stone data를 위한 평가함수 : val_epoch_stonedata
+        ####################################################
+        '''
         this_LOGITS, this_PROBS, this_TARGETS = val_epoch_stonedata(model, valid_loader, target_idx, is_ext=df_valid['is_ext'].values, n_test=8, get_output=True)
         LOGITS.append(this_LOGITS)
         PROBS.append(this_PROBS)
@@ -290,6 +343,8 @@ if __name__ == '__main__':
     print('----------------------------')
     args = parse_args()
     os.makedirs(args.oof_dir, exist_ok=True)
+    # if args.use_gradcam:
+    #     os.makedirs(os.path.join(args.gradcam_dir, args.kernel_type), exist_ok=True)
     os.environ['CUDA_VISIBLE_DEVICES'] = args.CUDA_VISIBLE_DEVICES
 
     if args.enet_type == 'resnest101':

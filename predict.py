@@ -62,7 +62,11 @@ def parse_args():
 
 def main():
 
-    # 데이터셋 세팅 가져오기
+    '''
+    ####################################################
+    # stone data 데이터셋 : dataset.get_df_stone
+    ####################################################
+    '''
     df_train, df_test, meta_features, n_meta_features, target_idx = get_df_stone(
         k_fold = args.k_fold,
         out_dim = args.out_dim,
@@ -76,7 +80,7 @@ def main():
 
     # https://discuss.pytorch.org/t/error-expected-more-than-1-value-per-channel-when-training/26274
     # batch_normalization에서 배치 사이즈 1인 경우 에러 발생할 수 있음
-    # 문제가 발생한 경우 배치 사이즈를 조정해서 해야할듯
+    # 문제가 발생한 경우 배치 사이즈를 조정해서 해야한다.
     if args.DEBUG:
         df_test = df_test.sample(args.batch_size * 3)
     dataset_test = MMC_ClassificationDataset(df_test, 'test', meta_features, transform=transforms_val)
@@ -133,14 +137,20 @@ def main():
 
                 probs /= args.n_test
 
+                '''
                 ####################################################
                 # 4장 의료 데이터를 묶음으로 확률계산. 평균이용
                 # 타 프로젝트 진행시 삭제해야함
+                ####################################################
+                '''
                 for b_i in range(int(data.shape[0] / 4)):
                     b_i4 = b_i * 4
                     probs[0 + b_i4:4 + b_i4, 0] = torch.mean(probs[0 + b_i4:4 + b_i4, 0])
                     probs[0 + b_i4:4 + b_i4, 1] = torch.mean(probs[0 + b_i4:4 + b_i4, 1])
-                ####################################################
+                '''
+                #################################################### 
+                ####################################################            
+                '''
 
                 PROBS.append(probs.detach().cpu())
 

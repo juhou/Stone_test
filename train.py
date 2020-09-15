@@ -283,6 +283,8 @@ def run(fold, df, meta_features, n_meta_features, transforms_train, transforms_v
     if DP:
         model = apex.parallel.convert_syncbn_model(model)
     model = model.to(device)
+    
+    
 
     auc_max = 0.
     auc_no_ext_max = 0.
@@ -336,7 +338,11 @@ def run(fold, df, meta_features, n_meta_features, transforms_train, transforms_v
 
 def main():
 
-    # 데이터셋 세팅 가져오기
+    '''
+    ####################################################
+    # stone data 데이터셋 : dataset.get_df_stone
+    ####################################################
+    '''
     df_train, df_test, meta_features, n_meta_features, target_idx = get_df_stone(
         k_fold = args.k_fold,
         out_dim = args.out_dim,
