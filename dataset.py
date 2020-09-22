@@ -16,7 +16,6 @@ image_name: 이미지 파일 이름
 
 '''
 
-
 def get_df_stone(k_fold, data_dir, data_folder, out_dim = 1, use_meta = False, use_ext = False):
     '''
 
@@ -46,6 +45,14 @@ def get_df_stone(k_fold, data_dir, data_folder, out_dim = 1, use_meta = False, u
     # http://www.leejungmin.org/post/2018/04/21/pandas_apply_and_map/
     df_train['filepath'] = df_train['image_name'].apply(lambda x: os.path.join(data_dir, f'{data_folder}train', x))  # f'{x}.jpg'
 
+    # 원본데이터=0, 외부데이터=1
+    df_train['is_ext'] = 0
+
+    '''
+    ####################################################
+    교차 검증 구현 (k-fold cross-validation)
+    ####################################################
+    '''
     # 교차 검증을 위해 이미지 리스트들에 분리된 번호를 매김
     patients = len(df_train['patient_id'].unique())
     print(f'Original dataset의 사람 인원수 : {patients}')
@@ -55,18 +62,19 @@ def get_df_stone(k_fold, data_dir, data_folder, out_dim = 1, use_meta = False, u
     print(f'Dataset: {k_fold}-fold cross-validation')
 
     # 환자id : 분할 번호
+    # 분할 방식을 나름대로 구현할 수 있다.
     patients2fold = {i: i % k_fold for i in range(patients)}
-
     df_train['fold'] = df_train['patient_id'].map(patients2fold)
-    df_train['is_ext'] = 0  # 원본데이터=0, 외부데이터=1
 
+
+
+    '''
+    ####################################################
+    외부 데이터를 사용할 경우에 대한 구현
+    ####################################################
+    '''
     # 외부 데이터를 사용할 경우 이곳을 구현
     if use_ext:
-        '''
-        ####################################################
-        외부 데이터를 사용할 경우에 대한 구현 - begin
-        ####################################################
-        '''
         # 외부 데이터베이스 경로
         ext_data_folder = 'ext_stone1/'
 
@@ -90,6 +98,8 @@ def get_df_stone(k_fold, data_dir, data_folder, out_dim = 1, use_meta = False, u
         # 데이터셋 전체를 다 쓰지 않고 일부만 사용
         df_train_ext = df_train_ext.sample(1024)
         df_train = pd.concat([df_train, df_train_ext]).reset_index(drop=True)
+
+
 
     # test data
     df_test = pd.read_csv(os.path.join(data_dir, data_folder, 'test.csv'))

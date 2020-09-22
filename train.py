@@ -39,15 +39,21 @@ Run -> Edit Configuration -> train.py 가 선택되었는지 확인
 
 
 Training list
-1. python train.py --kernel-type 5fold_b3_256_30ep --data-folder original_stone/ --enet-type tf_efficientnet_b3 --n-epochs 30 --image-size 256
+1. python train.py --kernel-type temp5fold_b3_256_30ep --data-folder original_stone/ --enet-type tf_efficientnet_b3 --n-epochs 30 --image-size 256
 2. python train.py --kernel-type 10fold_b3_512_30ep --k-fold 10 --data-folder original_stone/ --enet-type tf_efficientnet_b3 --n-epochs 30 --image-size 512
 3. python train.py --kernel-type 5fold_b5_256_30ep --data-folder original_stone/ --enet-type tf_efficientnet_b5  --n-epochs 30 --image-size 256
 4. python train.py --kernel-type 5fold_b3_256_30ep_ext --data-folder original_stone/ --enet-type tf_efficientnet_b3 --n-epochs 30 --image-size 256 --use-ext
 
 
-edited by MMCLab, 허종욱, 2020
-'''
+python train.py --kernel-type 10fold_b3_512_30ep --k-fold 10 --data-folder original_stone/ --enet-type tf_efficientnet_b3_ns --n-epochs 30 --image-size 512 --batch-size 4
 
+python train.py --kernel-type 10fold_b4_512_50ep --k-fold 10 --data-folder original_stone/ --enet-type tf_efficientnet_b4_ns --n-epochs 50 --image-size 512 --batch-size 4
+
+python train.py --kernel-type 10fold_b4_512_30ep --k-fold 10 --data-folder original_stone/ --enet-type tf_efficientnet_b4_ns --n-epochs 30 --image-size 512 --batch-size 4
+
+
+ MMCLab, 허종욱, 2020python train.py --kernel-type 10fold_b4_512_30ep --k-fold 10 --data-folder original_stone/ --enet-type tf_efficientnet_b4_ns --n-epochs 30 --image-size 512 --batch-size 4
+'''
 
 
 def parse_args():
