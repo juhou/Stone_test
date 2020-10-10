@@ -6,6 +6,7 @@ from torch.utils.data import DataLoader
 from dataset import get_df_stone, get_transforms, MMC_ClassificationDataset
 from models import Effnet_MMC, Resnest_MMC, Seresnext_MMC
 from utils.util import *
+from sklearn.metrics import roc_auc_score
 
 Precautions_msg = '(주의사항) Stone dataset의 경우 사람당 4장의 이미지기때문에 batch사이즈를 4의 배수로 해야 제대로 평가 된다.'
 
@@ -24,10 +25,9 @@ Run -> Edit Configuration -> predict.py 가 선택되었는지 확인
 -> parameters 이동 후 아래를 입력 -> 적용하기 후 실행/디버깅
 --kernel-type 5fold_b3_256_30ep --data-folder original_stone/ --enet-type tf_efficientnet_b3 --n-epochs 30
 
-
 python predict.py --kernel-type 5fold_b7_100ep --data-folder original_stone/ --enet-type tf_efficientnet_b7_ns --n-epochs 100 --image-size 256
 python predict.py --kernel-type 5fold_b3_256_30ep --data-folder original_stone/ --enet-type tf_efficientnet_b3 --n-epochs 30 --image-size 256
-
+python predict.py --kernel-type 5fold_b3_256_30ep_ext --data-folder original_stone/ --enet-type tf_efficientnet_b3 --n-epochs 30 --image-size 256 --use-ext
 
 edited by MMCLab, 허종욱, 2020
 '''
@@ -118,8 +118,9 @@ def main():
         model.eval()
 
         PROBS = []
+        TARGETS = []
         with torch.no_grad():
-            for (data) in tqdm(test_loader):
+            for (data, target) in tqdm(test_loader):
 
                 if args.use_meta:
                     data, meta = data
@@ -153,11 +154,16 @@ def main():
                 '''
 
                 PROBS.append(probs.detach().cpu())
+                TARGETS.append(target.detach().cpu())
 
         PROBS = torch.cat(PROBS).numpy()
+        TARGETS = torch.cat(TARGETS).numpy()
 
-    df_test['target'] = PROBS[:, target_idx]
-    df_test[['image_name', 'target']].to_csv(os.path.join(args.sub_dir, f'sub_{args.kernel_type}_{args.eval}.csv'), index=False)
+        df_test['target'] = PROBS[:, target_idx]
+        acc = (PROBS.argmax(1) == TARGETS).mean() * 100.
+        auc = roc_auc_score((TARGETS == target_idx).astype(float), PROBS[:, target_idx])
+
+        df_test[['image_name', 'target']].to_csv(os.path.join(args.sub_dir, f'sub_{args.kernel_type}_{args.eval}_{fold}_{acc:.2f}_{auc:.4f}.csv'), index=False)
 
 
 if __name__ == '__main__':

@@ -95,6 +95,8 @@ def get_df_stone(k_fold, data_dir, data_folder, out_dim = 1, use_meta = False, u
     df_test = pd.read_csv(os.path.join(data_dir, data_folder, 'test.csv'))
     df_test['filepath'] = df_test['image_name'].apply(lambda x: os.path.join(data_dir, f'{data_folder}test', x)) # f'{x}.jpg'
 
+
+
     '''
     ####################################################
     메타 데이터를 사용하는 경우 (나이, 성별 등)
@@ -115,10 +117,14 @@ def get_df_stone(k_fold, data_dir, data_folder, out_dim = 1, use_meta = False, u
     diagnosis2idx = {d: idx for idx, d in enumerate(sorted(df_train.target.unique()))}
     df_train['target'] = df_train['target'].map(diagnosis2idx)
 
+
+    # test data의 레이블 정보 (없는 경우엔 필요없음)
+    if 'target' in df_test.columns:
+        df_test['target'] = df_test['target'].map(diagnosis2idx)
+
     # CSV 기준 정상은 0, 비정상은 1
     # 여기서는 stone 데이터를 타겟으로 삼음
     target_idx = diagnosis2idx[1]
-
 
     return df_train, df_test, meta_features, n_meta_features, target_idx
 
@@ -224,12 +230,12 @@ class MMC_ClassificationDataset(Dataset):
         else:
             data = torch.tensor(image).float()
 
-        if self.mode == 'test':
-            # Test 의 경우 정답을 모르기에 데이터만 리턴
-            return data
-        else:
-            # training 의 경우 CSV의 스톤여부를 타겟으로 보내줌
-            return data, torch.tensor(self.csv.iloc[index].target).long()
+        # if self.mode == 'test':
+        #     # Test 의 경우 정답을 모르기에 데이터만 리턴
+        #     return data
+        # else:
+        #     # training 의 경우 CSV의 스톤여부를 타겟으로 보내줌
+        return data, torch.tensor(self.csv.iloc[index].target).long()
 
 
 

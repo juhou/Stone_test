@@ -12,7 +12,6 @@ from dataset import get_df_stone, get_transforms, MMC_ClassificationDataset
 from models import Effnet_MMC, Resnest_MMC, Seresnext_MMC
 from utils.util import *
 from utils.torchsummary import summary
-from utils.grad_cam import *
 
 Precautions_msg = '(주의사항) Stone dataset의 경우 사람당 4장의 이미지기때문에 batch사이즈를 4의 배수로 해야 제대로 평가 된다.'
 
@@ -57,10 +56,6 @@ def parse_args():
     parser.add_argument('--model-dir', type=str, default='./weights')
     parser.add_argument('--log-dir', type=str, default='./logs')
     parser.add_argument('--oof-dir', type=str, default='./oofs')
-
-    # grad-cam을 계산해서 보여준다.
-    parser.add_argument('--use-gradcam', action='store_true')
-    parser.add_argument('--gradcam-dir', type=str, default='./gradcams')
 
     parser.add_argument('--k-fold', type=int, default=5)
     parser.add_argument('--eval', type=str, choices=['best', 'best_no_ext', 'final'], default="best")
@@ -173,30 +168,6 @@ def val_epoch_stonedata(model, loader, target_idx, is_ext=None, n_test=1, get_ou
     PROBS = torch.cat(PROBS).numpy()
     TARGETS = torch.cat(TARGETS).numpy()
 
-
-
-    # if args.use_gradcam:
-    #     print("calculate gradcam: \n")
-    #     for (data, target) in tqdm(loader):
-    #         data, target = data.to(device), target.to(device)
-    #
-    #         # Grad_cam visualization
-    #         gcam = GradCAM(model=model)
-    #         probs, ids = gcam.forward(data)
-    #         ids_ = torch.LongTensor([[target_idx]] * args.batch_size).to(device)
-    #
-    #         gcam.backward(ids=ids_)
-    #         target_layer = "enet"
-    #         classes = ['normal', 'stone']
-    #
-    #         # Grad-CAM
-    #         regions = gcam.generate(target_layer=target_layer)
-    #         raw_images = data.tolist()
-    #         for j in range(len(data)):
-    #             print("\t#{}: {} ({:.5f})".format(j, classes[target_idx], float(probs[ids == target_idx][j])))
-    #             save_gradcam(filename=os.path.join(args.gradcam_dir, args.kernel_type,
-    #                                                f"/{j}-gradcam.png"),
-    #                          gcam=regions[j, 0], raw_image=raw_images[j])
 
     if get_output:
         return LOGITS, PROBS, TARGETS
@@ -343,8 +314,8 @@ if __name__ == '__main__':
     print('----------------------------')
     args = parse_args()
     os.makedirs(args.oof_dir, exist_ok=True)
-    # if args.use_gradcam:
-    #     os.makedirs(os.path.join(args.gradcam_dir, args.kernel_type), exist_ok=True)
+    if args.use_gradcam:
+        os.makedirs(os.path.join(args.gradcam_dir, args.kernel_type), exist_ok=True)
     os.environ['CUDA_VISIBLE_DEVICES'] = args.CUDA_VISIBLE_DEVICES
 
     if args.enet_type == 'resnest101':
