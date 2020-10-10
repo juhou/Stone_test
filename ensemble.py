@@ -25,6 +25,7 @@ def parse_args():
     parser.add_argument('--sub-dir', type=str, default='./subs')
     parser.add_argument('--data-dir', type=str, default='./data/')
     parser.add_argument('--data-folder', type=str, default='original_stone/')
+    parser.add_argument('--ensemble-name', type=str, default='final_sub')
     args, _ = parser.parse_known_args()
     return args
 
@@ -65,14 +66,14 @@ if __name__ == '__main__':
         df_sub = subs[0]
         df_sub['target'] = PROBS
         df_sub['gt'] = TARGETS
-        df_sub.to_csv(f'./final_sub_{acc:.2f}_{auc:.4f}.csv', index=False)
+        df_sub.to_csv(f'./{args.ensemble_name}_{acc:.2f}_{auc:.4f}.csv', index=False)
 
     else:
         # Test에 대한 정답이 없는 경우
         # 앙상블 최종 결과를 저장함
         df_sub = subs[0]
         df_sub['target'] = PROBS
-        df_sub.to_csv(f"final_sub1.csv", index=False)
+        df_sub.to_csv(f"{args.ensemble_name}.csv", index=False)
 
 
 

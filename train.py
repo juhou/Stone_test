@@ -35,22 +35,7 @@ Run -> Edit Configuration -> train.py 가 선택되었는지 확인
 *** def parse_args(): 실행 파라미터에 대한 모든 정보가 있다.  
 *** def run(): 학습의 모든과정이 담긴 함수. 이곳에 다양한 trick을 적용하여 성능을 높혀보자. 
 ** def main(): fold로 나뉜 데이터를 run 함수에 분배해서 실행
-* def train_epoch(), def val_epoch() : 완벽히 이해 후 수정하도록
-
-
-Training list
-1. python train.py --kernel-type temp5fold_b3_256_30ep --data-folder original_stone/ --enet-type tf_efficientnet_b3 --n-epochs 30 --image-size 256
-2. python train.py --kernel-type 10fold_b3_512_30ep --k-fold 10 --data-folder original_stone/ --enet-type tf_efficientnet_b3 --n-epochs 30 --image-size 512
-3. python train.py --kernel-type 5fold_b5_256_30ep --data-folder original_stone/ --enet-type tf_efficientnet_b5  --n-epochs 30 --image-size 256
-4. python train.py --kernel-type 5fold_b3_256_30ep_ext --data-folder original_stone/ --enet-type tf_efficientnet_b3 --n-epochs 30 --image-size 256 --use-ext
-
-
-python train.py --kernel-type 10fold_b3_512_30ep --k-fold 10 --data-folder original_stone/ --enet-type tf_efficientnet_b3_ns --n-epochs 30 --image-size 512 --batch-size 4
-
-python train.py --kernel-type 10fold_b4_512_50ep --k-fold 10 --data-folder original_stone/ --enet-type tf_efficientnet_b4_ns --n-epochs 50 --image-size 512 --batch-size 4
-
-python train.py --kernel-type 10fold_b4_512_30ep --k-fold 10 --data-folder original_stone/ --enet-type tf_efficientnet_b4_ns --n-epochs 30 --image-size 512 --batch-size 4
-
+* def train_epoch(), def val_epoch() : 완벽히 이해 후 수정
 
  MMCLab, 허종욱, 2020python train.py --kernel-type 10fold_b4_512_30ep --k-fold 10 --data-folder original_stone/ --enet-type tf_efficientnet_b4_ns --n-epochs 30 --image-size 512 --batch-size 4
 '''
@@ -110,6 +95,7 @@ def parse_args():
     parser.add_argument('--log-dir', type=str, default='./logs')
     # Evaluation results will be printed out and saved to ./logs/
     # Out-of-folds prediction results will be saved to ./oofs/
+    # 분할 했다가 다시 합친 결과
 
     parser.add_argument('--accumulation_step', type=int, default=2)
     # Gradient accumulation step
