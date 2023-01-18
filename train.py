@@ -143,9 +143,9 @@ def train_epoch(model, loader, optimizer):
             with amp.scale_loss(loss, optimizer) as scaled_loss:
                 scaled_loss.backward()
 
-        if args.image_size in [896,576]:
+        #if args.image_size in [896,576]:
             # 그라디언트가 너무 크면 값을 0.5로 잘라준다 (max_grad_norm=0.5)
-            torch.nn.utils.clip_grad_norm_(model.parameters(), 0.5)
+            #torch.nn.utils.clip_grad_norm_(model.parameters(), 0.5)
 
         # gradient accumulation (메모리 부족할때)
         if args.accumulation_step:
