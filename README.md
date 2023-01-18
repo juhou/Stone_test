@@ -75,9 +75,6 @@ cuddn 7.6.5
 ## Training
 
 
-SIIM-ISIC Melanoma Classification 커널 구조를 기반으로 작성하였다. https://www.kaggle.com/c/siim-isic-melanoma-classification/discussion/175412
-
-
 
 Terminal을 이용하는 경우 경로 설정 후 아래 코드를 직접 실행
 
@@ -236,4 +233,9 @@ root 폴더에 `final_sub1.csv`라는 형태로 출력을 만들어준다.
 ```
 python ensemble.py
 ```
+
+## Acknowledgement
+
+본 코드는 SIIM-ISIC Melanoma Classification 커널 구조를 기반으로 작성하였다. https://www.kaggle.com/c/siim-isic-melanoma-classification/discussion/175412
+
 
